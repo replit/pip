@@ -2,6 +2,7 @@ import collections
 import logging
 from typing import Iterator, List, Optional, Sequence, Tuple
 
+from pip._internal.operations.install.wheel import ContentAddressablePool
 from pip._internal.utils.logging import indent_log
 
 from .req_file import parse_requirements
@@ -45,6 +46,7 @@ def install_given_reqs(
     warn_script_location,  # type: bool
     use_user_site,  # type: bool
     pycompile,  # type: bool
+    pool,  # type: Optional[ContentAddressablePool]
 ):
     # type: (...) -> List[InstallationResult]
     """
@@ -83,6 +85,7 @@ def install_given_reqs(
                     warn_script_location=warn_script_location,
                     use_user_site=use_user_site,
                     pycompile=pycompile,
+                    pool=pool,
                 )
             except Exception:
                 # if install did not succeed, rollback previous uninstall

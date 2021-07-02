@@ -22,6 +22,7 @@ from pip._internal.locations import get_scheme
 from pip._internal.metadata import get_environment
 from pip._internal.models.format_control import FormatControl
 from pip._internal.operations.check import ConflictDetails, check_install_conflicts
+from pip._internal.operations.install.wheel import ContentAddressablePool
 from pip._internal.req import install_given_reqs
 from pip._internal.req.req_install import InstallRequirement
 from pip._internal.req.req_tracker import get_requirement_tracker
@@ -209,6 +210,20 @@ class InstallCommand(RequirementCommand):
             default=True,
             help="Do not warn about broken dependencies",
         )
+        self.cmd_opts.add_option(
+            "--content-addressable-pool-save-files",
+            action="store_true",
+            dest="content_addressable_pool_save_files",
+            default=False,
+            help="Save content-addressable pool files that are missing",
+        )
+        self.cmd_opts.add_option(
+            "--content-addressable-pool-symlink",
+            action="store_true",
+            dest="content_addressable_pool_symlink",
+            default=False,
+            help="Use symlinks (instead of hard links) for the content-addressable pool files",
+        )
 
         self.cmd_opts.add_option(cmdoptions.no_binary())
         self.cmd_opts.add_option(cmdoptions.only_binary())
@@ -391,6 +406,21 @@ class InstallCommand(RequirementCommand):
             if options.target_dir or options.prefix_path:
                 warn_script_location = False
 
+            content_addressable_pool = "content-addressable-pool" in options.features_enabled
+            pool = None  # type: Optional[ContentAddressablePool]
+            if content_addressable_pool:
+                logger.warning(
+                    "pip is using a content-addressable pool to install files "
+                    "from. This experimental feature is enabled through "
+                    "--use-feature=content-addressable-pool and it is not "
+                    "ready for production."
+                )
+                pool = ContentAddressablePool(
+                    options.cache_dir,
+                    save=options.content_addressable_pool_save_files,
+                    symlink=options.content_addressable_pool_symlink,
+                )
+
             installed = install_given_reqs(
                 to_install,
                 install_options,
@@ -401,6 +431,7 @@ class InstallCommand(RequirementCommand):
                 warn_script_location=warn_script_location,
                 use_user_site=options.use_user_site,
                 pycompile=options.compile,
+                pool=pool,
             )
 
             lib_locations = get_lib_location_guesses(

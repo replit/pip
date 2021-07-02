@@ -12,7 +12,7 @@ import re
 import shutil
 import sys
 import warnings
-from base64 import urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from email.message import Message
 from itertools import chain, filterfalse, starmap
 from typing import (
@@ -107,6 +107,10 @@ def fix_script(path):
         exename = sys.executable.encode(sys.getfilesystemencoding())
         firstline = b'#!' + exename + os.linesep.encode("ascii")
         rest = script.read()
+    # If the file is installed from the pool, let's unlink it before
+    # writing the new version.
+    if not os.access(path, os.W_OK):
+        os.unlink(path)
     with open(path, 'wb') as script:
         script.write(firstline)
         script.write(rest)
@@ -382,13 +386,41 @@ def get_console_script_specs(console):
     return scripts_to_generate
 
 
+class ContentAddressablePool:
+    def __init__(self, cache_dir, save, symlink):
+        # type: (str, bool, bool) -> None
+        self.cache_dir = cache_dir
+        self.save = save
+        self.symlink = symlink
+
+    def path_for_digest(self, digest):
+        # type: (str) -> str
+        return os.path.join(
+            self.cache_dir,
+            'pool',
+            digest[:2],
+            digest[2:4],
+            digest[4:6],
+            digest[6:]
+        )
+
+
 class ZipBackedFile:
-    def __init__(self, src_record_path, dest_path, zip_file):
-        # type: (RecordPath, str, ZipFile) -> None
+    def __init__(
+        self,
+        src_record_path,  # type: RecordPath
+        dest_path,  # type: str
+        zip_file,  # type: ZipFile
+        sha256_hash,  # type: Optional[str]
+        pool,  # type: Optional[ContentAddressablePool]
+    ):
+        # type: (...) -> None
         self.src_record_path = src_record_path
         self.dest_path = dest_path
         self._zip_file = zip_file
         self.changed = False
+        self.sha256_hash = sha256_hash
+        self.pool = pool
 
     def _getinfo(self):
         # type: () -> ZipInfo
@@ -396,11 +428,6 @@ class ZipBackedFile:
 
     def save(self):
         # type: () -> None
-        # directory creation is lazy and after file filtering
-        # to ensure we don't install empty dirs; empty dirs can't be
-        # uninstalled.
-        parent_dir = os.path.dirname(self.dest_path)
-        ensure_dir(parent_dir)
 
         # When we open the output file below, any existing file is truncated
         # before we start writing the new contents. This is fine in most
@@ -413,14 +440,50 @@ class ZipBackedFile:
         if os.path.exists(self.dest_path):
             os.unlink(self.dest_path)
 
-        zipinfo = self._getinfo()
+        def _save(dest_path, writable=True):
+            # type: (str, bool) -> None
+            # directory creation is lazy and after file filtering
+            # to ensure we don't install empty dirs; empty dirs can't be
+            # uninstalled.
+            parent_dir = os.path.dirname(dest_path)
+            ensure_dir(parent_dir)
 
-        with self._zip_file.open(zipinfo) as f:
-            with open(self.dest_path, "wb") as dest:
-                shutil.copyfileobj(f, dest)
+            zipinfo = self._getinfo()
+            with self._zip_file.open(zipinfo) as f:
+                with open(dest_path, "wb") as dest:
+                    shutil.copyfileobj(f, dest)
 
-        if zip_item_is_executable(zipinfo):
-            set_extracted_file_to_default_mode_plus_executable(self.dest_path)
+            if zip_item_is_executable(zipinfo):
+                set_extracted_file_to_default_mode_plus_executable(
+                    dest_path,
+                    writable=writable
+                )
+
+        if self.sha256_hash is not None and self.pool is not None:
+            cached_path = self.pool.path_for_digest(self.sha256_hash)
+            if not os.path.isfile(cached_path):
+                if not self.pool.save:
+                    # We're not going to use the pool.
+                    _save(self.dest_path, writable=True)
+                    return
+                # Save to cache and symlink from there.
+                _save(cached_path, writable=False)
+            parent_dir = os.path.dirname(self.dest_path)
+            ensure_dir(parent_dir)
+            if self.pool.symlink:
+                os.symlink(cached_path, self.dest_path)
+                return
+            # Fall back to a hard link. This might not work in all
+            # platforms and situations, so fall back to regular
+            # copying if this fails.
+            try:
+                os.link(cached_path, self.dest_path)
+                return
+            except OSError:
+                # This is moderately expected. Fall back to copy.
+                pass
+        
+        _save(self.dest_path, writable=True)
 
 
 class ScriptFile:
@@ -432,7 +495,7 @@ class ScriptFile:
         self.changed = False
 
     def save(self):
-        # type: () -> None
+        # type: (str) -> None
         self._file.save()
         self.changed = fix_script(self.dest_path)
 
@@ -471,6 +534,7 @@ def _install_wheel(
     warn_script_location=True,  # type: bool
     direct_url=None,  # type: Optional[DirectUrl]
     requested=False,  # type: bool
+    pool=None,  # type: Optional[ContentAddressablePool]
 ):
     # type: (...) -> None
     """Install a wheel.
@@ -483,6 +547,7 @@ def _install_wheel(
     :param pycompile: Whether to byte-compile installed Python files
     :param warn_script_location: Whether to check that scripts are installed
         into a directory on PATH
+    :param pool: An optional content-addressable pool cache
     :raises UnsupportedWheel:
         * when the directory holds an unpacked wheel with incompatible
           Wheel-Version
@@ -494,6 +559,25 @@ def _install_wheel(
         lib_dir = scheme.purelib
     else:
         lib_dir = scheme.platlib
+
+    distribution = pkg_resources_distribution_for_wheel(
+        wheel_zip, name, wheel_path
+    )
+    record_text = distribution.get_metadata('RECORD')
+    record_rows = list(csv.reader(record_text.splitlines()))
+
+    digests = {}  # type: Dict[RecordPath, str]
+    if pool is not None:
+        for row in record_rows:
+            if len(row) < 3:
+                continue
+            record_path = _parse_record_path(row[0])
+            if '=' not in row[1]:
+                continue
+            digest_name, b64hash = row[1].split('=', 1)
+            if digest_name != 'sha256':
+                continue
+            digests[record_path] = urlsafe_b64decode(f'{b64hash}=').hex()
 
     # Record details of the files moved
     #   installed = files copied from the wheel to the destination
@@ -542,7 +626,13 @@ def _install_wheel(
             normed_path = os.path.normpath(record_path)
             dest_path = os.path.join(dest, normed_path)
             assert_no_path_traversal(dest, dest_path)
-            return ZipBackedFile(record_path, dest_path, zip_file)
+            return ZipBackedFile(
+                record_path,
+                dest_path,
+                zip_file,
+                digests.get(record_path),
+                pool
+            )
 
         return make_root_scheme_file
 
@@ -582,7 +672,13 @@ def _install_wheel(
 
             dest_path = os.path.join(scheme_path, dest_subpath)
             assert_no_path_traversal(scheme_path, dest_path)
-            return ZipBackedFile(record_path, dest_path, zip_file)
+            return ZipBackedFile(
+                record_path,
+                dest_path,
+                zip_file,
+                digests.get(record_path),
+                pool
+            )
 
         return make_data_scheme_file
 
@@ -620,9 +716,6 @@ def _install_wheel(
     files = chain(files, other_scheme_files)
 
     # Get the defined entry points
-    distribution = pkg_resources_distribution_for_wheel(
-        wheel_zip, name, wheel_path
-    )
     console, gui = get_entrypoints(distribution)
 
     def is_entrypoint_wrapper(file):
@@ -761,9 +854,6 @@ def _install_wheel(
             pass
         generated.append(requested_path)
 
-    record_text = distribution.get_metadata('RECORD')
-    record_rows = list(csv.reader(record_text.splitlines()))
-
     rows = get_csv_rows_for_installed(
         record_rows,
         installed=installed,
@@ -803,6 +893,7 @@ def install_wheel(
     warn_script_location=True,  # type: bool
     direct_url=None,  # type: Optional[DirectUrl]
     requested=False,  # type: bool
+    pool=None,  # type: Optional[ContentAddressablePool]
 ):
     # type: (...) -> None
     with ZipFile(wheel_path, allowZip64=True) as z:
@@ -816,4 +907,5 @@ def install_wheel(
                 warn_script_location=warn_script_location,
                 direct_url=direct_url,
                 requested=requested,
+                pool=pool,
             )
