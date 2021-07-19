@@ -594,7 +594,7 @@ def test_wheel_install_with_ca_pool(script, tmpdir, data):
         'sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU'.split('=', 1)
     path = urlsafe_b64decode(f'{b64hash}=').hex()
 
-    # Make sure the path of the wheel we installed is safely installed in the cacache
+    # Make sure the path of the file we installed is safely installed in the cacache
     exists = [
         os.path.exists(
             os.path.join(
