@@ -32,7 +32,7 @@ from pip._internal.operations.install.editable_legacy import (
 )
 from pip._internal.operations.install.legacy import LegacyInstallFailure
 from pip._internal.operations.install.legacy import install as install_legacy
-from pip._internal.operations.install.wheel import install_wheel
+from pip._internal.operations.install.wheel import ContentAddressablePool, install_wheel
 from pip._internal.pyproject import load_pyproject_toml, make_pyproject_path
 from pip._internal.req.req_uninstall import UninstallPathSet
 from pip._internal.utils.deprecation import deprecated
@@ -746,7 +746,8 @@ class InstallRequirement:
         prefix=None,  # type: Optional[str]
         warn_script_location=True,  # type: bool
         use_user_site=False,  # type: bool
-        pycompile=True  # type: bool
+        pycompile=True,  # type: bool
+        pool=None  # type: Optional[ContentAddressablePool]
     ):
         # type: (...) -> None
         scheme = get_scheme(
@@ -793,6 +794,7 @@ class InstallRequirement:
                 warn_script_location=warn_script_location,
                 direct_url=direct_url,
                 requested=self.user_supplied,
+                pool=pool,
             )
             self.install_succeeded = True
             return

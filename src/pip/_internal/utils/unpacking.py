@@ -89,13 +89,17 @@ def is_within_directory(directory, target):
     return prefix == abs_directory
 
 
-def set_extracted_file_to_default_mode_plus_executable(path):
-    # type: (str) -> None
+def set_extracted_file_to_default_mode_plus_executable(path, writable=True):
+    # type: (str, bool) -> None
     """
     Make file present at path have execute for user/group/world
     (chmod +x) is no-op on windows per python docs
     """
-    os.chmod(path, (0o777 & ~current_umask() | 0o111))
+    if writable:
+        mask = 0o777
+    else:
+        mask = 0o555
+    os.chmod(path, (mask & ~current_umask() | 0o111))
 
 
 def zip_item_is_executable(info):
