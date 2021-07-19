@@ -495,7 +495,7 @@ class ScriptFile:
         self.changed = False
 
     def save(self):
-        # type: (str) -> None
+        # type: (ScriptFile) -> None
         self._file.save()
         self.changed = fix_script(self.dest_path)
 
@@ -571,13 +571,13 @@ def _install_wheel(
         for row in record_rows:
             if len(row) < 3:
                 continue
-            record_path = _parse_record_path(row[0])
+            parsed_record_path = _parse_record_path(row[0])
             if '=' not in row[1]:
                 continue
             digest_name, b64hash = row[1].split('=', 1)
             if digest_name != 'sha256':
                 continue
-            digests[record_path] = urlsafe_b64decode(f'{b64hash}=').hex()
+            digests[parsed_record_path] = urlsafe_b64decode(f'{b64hash}=').hex()
 
     # Record details of the files moved
     #   installed = files copied from the wheel to the destination
