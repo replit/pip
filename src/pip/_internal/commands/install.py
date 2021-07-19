@@ -222,7 +222,8 @@ class InstallCommand(RequirementCommand):
             action="store_true",
             dest="content_addressable_pool_symlink",
             default=False,
-            help="Use symlinks (instead of hard links) for the content-addressable pool files",
+            help="Use symlinks (instead of hard links) for the "
+                 "content-addressable pool files",
         )
 
         self.cmd_opts.add_option(cmdoptions.no_binary())
@@ -406,7 +407,8 @@ class InstallCommand(RequirementCommand):
             if options.target_dir or options.prefix_path:
                 warn_script_location = False
 
-            content_addressable_pool = "content-addressable-pool" in options.features_enabled
+            content_addressable_pool = "content-addressable-pool" \
+                                       in options.features_enabled
             pool = None  # type: Optional[ContentAddressablePool]
             if content_addressable_pool:
                 if options.cache_dir is None:

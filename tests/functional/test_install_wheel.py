@@ -3,7 +3,7 @@ import distutils
 import glob
 import os
 import shutil
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+from base64 import urlsafe_b64decode
 
 import pytest
 
@@ -590,7 +590,8 @@ def test_wheel_install_with_ca_pool(script, tmpdir, data):
     )
 
     # This is the sha of the simple.dist-0.1-py2.py3-none-any.whl wheel file
-    digest_name, b64hash = 'sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU'.split('=', 1)
+    digest_name, b64hash = \
+        'sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU'.split('=', 1)
     path = urlsafe_b64decode(f'{b64hash}=').hex()
 
     # Make sure the path of the wheel we installed is safely installed in the cacache
@@ -613,7 +614,8 @@ def test_wheel_install_with_ca_pool(script, tmpdir, data):
 
 
 def test_wheel_install_with_ca_pool_without_saving(script, tmpdir, data):
-    """Check wheel installations work when set to use a content addressable pool, but without the save option
+    """Check wheel installations work when set to use a content addressable pool,
+    but without the save option
     """
     package = data.packages.joinpath("simple.dist-0.1-py2.py3-none-any.whl")
     result = script.pip(
@@ -634,8 +636,9 @@ def test_wheel_install_with_ca_pool_without_saving(script, tmpdir, data):
 
 
 def test_wheel_install_with_ca_pool_without_cache_dir(script, tmpdir, data):
-    """Check wheel installations work when set to use a content addressable pool, but without any
-    cache dir configured. should return a warning.
+    """Check wheel installations work when set to use a content
+    addressable pool, but without any cache dir configured.
+    Should trigger a warning.
     """
     package = data.packages.joinpath("simple.dist-0.1-py2.py3-none-any.whl")
     result = script.pip(
@@ -650,7 +653,8 @@ def test_wheel_install_with_ca_pool_without_cache_dir(script, tmpdir, data):
         os.path.exists(script.cwd / "cache/pool"),
     ]
 
-    assert '--use-feature=content-addressable-pool can only be used when' not in result.stdout
+    assert '--use-feature=content-addressable-pool ' \
+           'can only be used when' not in result.stdout
     assert not any(exists)
 
 

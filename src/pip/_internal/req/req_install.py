@@ -825,7 +825,6 @@ class InstallRequirement:
                 build_env=self.build_env,
                 unpacked_source_directory=self.unpacked_source_directory,
                 req_description=str(self.req),
-                cache_dir=cache_dir,
             )
         except LegacyInstallFailure as exc:
             self.install_succeeded = False
