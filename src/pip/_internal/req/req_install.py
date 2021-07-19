@@ -32,10 +32,7 @@ from pip._internal.operations.install.editable_legacy import (
 )
 from pip._internal.operations.install.legacy import LegacyInstallFailure
 from pip._internal.operations.install.legacy import install as install_legacy
-from pip._internal.operations.install.wheel import (
-    ContentAddressablePool,
-    install_wheel,
-)
+from pip._internal.operations.install.wheel import ContentAddressablePool, install_wheel
 from pip._internal.pyproject import load_pyproject_toml, make_pyproject_path
 from pip._internal.req.req_uninstall import UninstallPathSet
 from pip._internal.utils.deprecation import deprecated

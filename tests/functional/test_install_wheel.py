@@ -3,6 +3,7 @@ import distutils
 import glob
 import os
 import shutil
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 import pytest
 
@@ -574,6 +575,83 @@ def test_wheel_install_with_no_cache_dir(script, tmpdir, data):
     result = script.pip('install', '--no-cache-dir', '--no-index', package)
     result.assert_installed('simpledist', editable=False)
 
+
+def test_wheel_install_with_ca_pool(script, tmpdir, data):
+    """Check wheel installations work when set to use a content addressable pool.
+    """
+    package = data.packages.joinpath("simple.dist-0.1-py2.py3-none-any.whl")
+    result = script.pip(
+        'install',
+        '--use-feature=content-addressable-pool',
+        '--content-addressable-pool-save-files',
+        '--cache-dir', './cache',
+        package,
+        allow_stderr_warning=True
+    )
+
+    # This is the sha of the simple.dist-0.1-py2.py3-none-any.whl wheel file
+    digest_name, b64hash = 'sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU'.split('=', 1)
+    path = urlsafe_b64decode(f'{b64hash}=').hex()
+
+    # Make sure the path of the wheel we installed is safely installed in the cacache
+    exists = [
+        os.path.exists(
+            os.path.join(
+                script.cwd,
+                "cache/pool",
+                path[:2],
+                path[2:4],
+                path[4:6],
+                path[6:],
+            ),
+        ),
+    ]
+
+    result.assert_installed('simpledist', editable=False)
+
+    assert any(exists)
+
+
+def test_wheel_install_with_ca_pool_without_saving(script, tmpdir, data):
+    """Check wheel installations work when set to use a content addressable pool, but without the save option
+    """
+    package = data.packages.joinpath("simple.dist-0.1-py2.py3-none-any.whl")
+    result = script.pip(
+        'install',
+        '--use-feature=content-addressable-pool',
+        '--cache-dir', './cache',
+        package,
+        allow_stderr_warning=True
+    )
+
+    exists = [
+        os.path.exists(script.cwd / "cache/pool"),
+    ]
+
+    result.assert_installed('simpledist', editable=False)
+
+    assert not any(exists)
+
+
+def test_wheel_install_with_ca_pool_without_cache_dir(script, tmpdir, data):
+    """Check wheel installations work when set to use a content addressable pool, but without any
+    cache dir configured. should return a warning.
+    """
+    package = data.packages.joinpath("simple.dist-0.1-py2.py3-none-any.whl")
+    result = script.pip(
+        'install',
+        '--use-feature=content-addressable-pool',
+        '--no-cache-dir',
+        package,
+        expect_error=True
+    )
+
+    exists = [
+        os.path.exists(script.cwd / "cache/pool"),
+    ]
+
+    assert '--use-feature=content-addressable-pool can only be used when' not in result.stdout
+    assert not any(exists)
 
 def test_wheel_install_fails_with_extra_dist_info(script):
     package = create_basic_wheel_for_package(

@@ -409,17 +409,24 @@ class InstallCommand(RequirementCommand):
             content_addressable_pool = "content-addressable-pool" in options.features_enabled
             pool = None  # type: Optional[ContentAddressablePool]
             if content_addressable_pool:
-                logger.warning(
-                    "pip is using a content-addressable pool to install files "
-                    "from. This experimental feature is enabled through "
-                    "--use-feature=content-addressable-pool and it is not "
-                    "ready for production."
-                )
-                pool = ContentAddressablePool(
-                    options.cache_dir,
-                    save=options.content_addressable_pool_save_files,
-                    symlink=options.content_addressable_pool_symlink,
-                )
+                if options.cache_dir is None:
+                    logger.warning(
+                        "--use-feature=content-addressable-pool can only be used when "
+                        "the pip cache directory is enabled and configured. The option "
+                        "will be ignored."
+                    )
+                else:
+                    logger.warning(
+                        "pip is using a content-addressable pool to install files "
+                        "from. This experimental feature is enabled through "
+                        "--use-feature=content-addressable-pool and it is not "
+                        "ready for production."
+                    )
+                    pool = ContentAddressablePool(
+                        options.cache_dir,
+                        save=options.content_addressable_pool_save_files,
+                        symlink=options.content_addressable_pool_symlink,
+                    )
 
             installed = install_given_reqs(
                 to_install,

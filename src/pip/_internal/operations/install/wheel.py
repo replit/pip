@@ -482,7 +482,7 @@ class ZipBackedFile:
             except OSError:
                 # This is moderately expected. Fall back to copy.
                 pass
-        
+
         _save(self.dest_path, writable=True)
 
 
