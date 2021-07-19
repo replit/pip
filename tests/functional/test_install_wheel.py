@@ -653,6 +653,7 @@ def test_wheel_install_with_ca_pool_without_cache_dir(script, tmpdir, data):
     assert '--use-feature=content-addressable-pool can only be used when' not in result.stdout
     assert not any(exists)
 
+
 def test_wheel_install_fails_with_extra_dist_info(script):
     package = create_basic_wheel_for_package(
         script,
