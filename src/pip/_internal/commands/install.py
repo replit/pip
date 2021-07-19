@@ -407,7 +407,7 @@ class InstallCommand(RequirementCommand):
             if options.target_dir or options.prefix_path:
                 warn_script_location = False
 
-            content_addressable_pool = ("content-addressable-pool" 
+            content_addressable_pool = ("content-addressable-pool"
                                         in options.features_enabled)
             pool = None  # type: Optional[ContentAddressablePool]
             if content_addressable_pool:
