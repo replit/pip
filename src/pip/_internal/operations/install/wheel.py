@@ -495,7 +495,7 @@ class ScriptFile:
         self.changed = False
 
     def save(self):
-        # type: (ScriptFile) -> None
+        # type: () -> None
         self._file.save()
         self.changed = fix_script(self.dest_path)
 
