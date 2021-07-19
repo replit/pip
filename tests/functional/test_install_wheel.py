@@ -605,7 +605,10 @@ def test_wheel_install_with_ca_pool(script, tmpdir, data):
     )
     valid = [
         os.path.exists(ca_file_path),
-        os.path.samefile(script.site_packages_path / 'simpledist/__init__.py', ca_file_path),
+        os.path.samefile(
+            script.site_packages_path / 'simpledist/__init__.py',
+            ca_file_path,
+        ),
     ]
 
     result.assert_installed('simpledist', editable=False)
