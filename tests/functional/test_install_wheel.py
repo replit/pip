@@ -589,7 +589,7 @@ def test_wheel_install_with_ca_pool(script, tmpdir, data):
         allow_stderr_warning=True
     )
 
-    # This is the sha of the simple.dist-0.1-py2.py3-none-any.whl wheel file
+    # This is the sha of the `simpledist/__init__.py` file inside the wheel.
     digest_name, b64hash = \
         'sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU'.split('=', 1)
     path = urlsafe_b64decode(f'{b64hash}=').hex()
