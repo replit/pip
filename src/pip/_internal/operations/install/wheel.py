@@ -536,6 +536,7 @@ def _install_wheel(
     wheel_path,  # type: str
     scheme,  # type: Scheme
     pycompile=True,  # type: bool
+    noop=False,  # type: bool
     warn_script_location=True,  # type: bool
     direct_url=None,  # type: Optional[DirectUrl]
     requested=False,  # type: bool
@@ -747,6 +748,10 @@ def _install_wheel(
     script_scheme_files = map(ScriptFile, script_scheme_files)
     files = chain(files, script_scheme_files)
 
+    if noop:
+        # Nothing to do here.
+        return
+
     for file in files:
         file.save()
         record_installed(file.src_record_path, file.dest_path, file.changed)
@@ -895,6 +900,7 @@ def install_wheel(
     scheme,  # type: Scheme
     req_description,  # type: str
     pycompile=True,  # type: bool
+    noop=False,  # type: bool
     warn_script_location=True,  # type: bool
     direct_url=None,  # type: Optional[DirectUrl]
     requested=False,  # type: bool
@@ -909,6 +915,7 @@ def install_wheel(
                 wheel_path=wheel_path,
                 scheme=scheme,
                 pycompile=pycompile,
+                noop=noop,
                 warn_script_location=warn_script_location,
                 direct_url=direct_url,
                 requested=requested,

@@ -197,6 +197,14 @@ class InstallCommand(RequirementCommand):
         )
 
         self.cmd_opts.add_option(
+            "--noop",
+            action="store_true",
+            dest="noop",
+            default=False,
+            help="Download and cache artifacts but do not actually install anything",
+        )
+
+        self.cmd_opts.add_option(
             "--no-warn-script-location",
             action="store_false",
             dest="warn_script_location",
@@ -440,6 +448,7 @@ class InstallCommand(RequirementCommand):
                 warn_script_location=warn_script_location,
                 use_user_site=options.use_user_site,
                 pycompile=options.compile,
+                noop=options.noop,
                 pool=pool,
             )
 

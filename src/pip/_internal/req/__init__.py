@@ -46,6 +46,7 @@ def install_given_reqs(
     warn_script_location,  # type: bool
     use_user_site,  # type: bool
     pycompile,  # type: bool
+    noop,  # type: bool
     pool,  # type: Optional[ContentAddressablePool]
 ):
     # type: (...) -> List[InstallationResult]
@@ -85,6 +86,7 @@ def install_given_reqs(
                     warn_script_location=warn_script_location,
                     use_user_site=use_user_site,
                     pycompile=pycompile,
+                    noop=noop,
                     pool=pool,
                 )
             except Exception:

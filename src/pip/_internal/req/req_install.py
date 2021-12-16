@@ -747,6 +747,7 @@ class InstallRequirement:
         warn_script_location=True,  # type: bool
         use_user_site=False,  # type: bool
         pycompile=True,  # type: bool
+        noop=False,  # type: bool
         pool=None  # type: Optional[ContentAddressablePool]
     ):
         # type: (...) -> None
@@ -791,6 +792,7 @@ class InstallRequirement:
                 scheme=scheme,
                 req_description=str(self.req),
                 pycompile=pycompile,
+                noop=noop,
                 warn_script_location=warn_script_location,
                 direct_url=direct_url,
                 requested=self.user_supplied,
@@ -818,6 +820,7 @@ class InstallRequirement:
                 prefix=prefix,
                 use_user_site=use_user_site,
                 pycompile=pycompile,
+                noop=noop,
                 scheme=scheme,
                 setup_py_path=self.setup_py_path,
                 isolated=self.isolated,
