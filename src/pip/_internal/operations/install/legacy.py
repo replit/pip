@@ -33,6 +33,7 @@ def install(
     prefix,  # type: Optional[str]
     use_user_site,  # type: bool
     pycompile,  # type: bool
+    noop,  # type: bool
     scheme,  # type: Scheme
     setup_py_path,  # type: str
     isolated,  # type: bool
@@ -42,6 +43,10 @@ def install(
     req_description,  # type: str
 ):
     # type: (...) -> bool
+
+    if noop:
+        # Nothing to do here.
+        return True
 
     header_dir = scheme.headers
 
