@@ -48,7 +48,10 @@ def _create_standalone_pip() -> Iterator[str]:
     The zip file's content is identical to the currently-running pip.
     It will be used to install requirements into the build environment.
     """
-    source = pathlib.Path(pip_location).resolve().parent
+    # Replit mod: the pip binary is a symlink to the content-addressable cache,
+    # so the original `.resolve()` was causing the zip to have some _very_
+    # unexpected contents.
+    source = pathlib.Path(pip_location).parent
 
     # Return the current instance if `source` is not a directory. We can't build
     # a zip from this, and it likely means the instance is already standalone.
