@@ -110,7 +110,7 @@ def fix_script(path):
         # this to be position-independent, so that it can be moved (or even the
         # repl forked!).
         exename = firstline[2:]
-        firstline = b'#!/usr/bin/env -S ./' + exename + os.linesep.encode("ascii")
+        firstline = b'#!/usr/bin/env ' + exename + os.linesep.encode("ascii")
         rest = script.read()
     # If the file is installed from the pool, let's unlink it before
     # writing the new version.
