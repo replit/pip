@@ -27,7 +27,7 @@ import warnings
 from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 from pip._vendor import requests, urllib3
-from pip._vendor.cachecontrol import CacheControlAdapter
+from .ro_cache_adapter import ReadOnlyCacheControlAdapter
 from pip._vendor.requests.adapters import BaseAdapter, HTTPAdapter
 from pip._vendor.requests.models import PreparedRequest, Response
 from pip._vendor.requests.structures import CaseInsensitiveDict
@@ -251,7 +251,7 @@ class InsecureHTTPAdapter(HTTPAdapter):
         super().cert_verify(conn=conn, url=url, verify=False, cert=cert)
 
 
-class InsecureCacheControlAdapter(CacheControlAdapter):
+class InsecureCacheControlAdapter(ReadOnlyCacheControlAdapter):
 
     def cert_verify(
         self,
@@ -327,7 +327,7 @@ class PipSession(requests.Session):
         # origin, and we don't want someone to be able to poison the cache and
         # require manual eviction from the cache to fix it.
         if cache:
-            secure_adapter = CacheControlAdapter(
+            secure_adapter = ReadOnlyCacheControlAdapter(
                 cache=SafeFileCache(cache),
                 max_retries=retries,
             )
