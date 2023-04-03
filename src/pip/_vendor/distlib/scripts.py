@@ -148,10 +148,10 @@ class ScriptMaker(object):
                               (shebang_length <= max_shebang_length))
 
         if simple_shebang:
-            result = b'#!/usr/bin/env python3' + post_interp + b'\n'
+            result = b'#!' + executable + post_interp + b'\n'
         else:
             result = b'#!/bin/sh\n'
-            result += b"'''exec' python3" + post_interp + b' "$0" "$@"\n'
+            result += b"'''exec' " + executable + post_interp + b' "$0" "$@"\n'
             result += b"' '''"
         return result
 
