@@ -97,6 +97,7 @@ def fix_script(path):
     """Replace #!python with #!/path/to/python
     Return True if file was changed.
     """
+    print('wheel.py fix_script(%s)' % path)
     # XXX RECORD hashes will need to be updated
     assert os.path.isfile(path)
 
@@ -106,6 +107,8 @@ def fix_script(path):
             return False
         exename = sys.executable.encode(sys.getfilesystemencoding())
         firstline = b"#!" + exename + os.linesep.encode("ascii")
+        print('exename=%s' % exename)
+        print('firstline=%s' % firstline)
         rest = script.read()
     # If the file is installed from the pool, let's unlink it before
     # writing the new version.
