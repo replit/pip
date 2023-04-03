@@ -104,8 +104,8 @@ def fix_script(path):
         firstline = script.readline()
         if not firstline.startswith(b'#!python'):
             return False
-        exename = firstline[2:]
-        firstline = b'#!/usr/bin/env ' + exename + os.linesep.encode("ascii")
+        exename = sys.executable.encode(sys.getfilesystemencoding())
+        firstline = b"#!" + exename + os.linesep.encode("ascii")
         rest = script.read()
     # If the file is installed from the pool, let's unlink it before
     # writing the new version.
