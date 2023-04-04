@@ -679,11 +679,11 @@ def decide_user_install(
                 "Can not combine '--user' and '--prefix' as they imply "
                 "different installation locations"
             )
-        if virtualenv_no_global():
-            raise InstallationError(
-                "Can not perform a '--user' install. User site-packages "
-                "are not visible in this virtualenv."
-            )
+        # if virtualenv_no_global():
+        #     raise InstallationError(
+        #         "Can not perform a '--user' install. User site-packages "
+        #         "are not visible in this virtualenv."
+        #     )
         logger.debug("User install by explicit request")
         return True
 

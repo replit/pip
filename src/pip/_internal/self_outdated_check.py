@@ -109,79 +109,80 @@ def pip_self_version_check(session, options):
     the active virtualenv or in the user's USER_CACHE_DIR keyed off the prefix
     of the pip script path.
     """
-    installed_dist = get_default_environment().get_distribution("pip")
-    if not installed_dist:
-        return
+    pass
+    # installed_dist = get_default_environment().get_distribution("pip")
+    # if not installed_dist:
+    #     return
 
-    pip_version = installed_dist.version
-    pypi_version = None
+    # pip_version = installed_dist.version
+    # pypi_version = None
 
-    try:
-        state = SelfCheckState(cache_dir=options.cache_dir)
+    # try:
+    #     state = SelfCheckState(cache_dir=options.cache_dir)
 
-        current_time = datetime.datetime.utcnow()
-        # Determine if we need to refresh the state
-        if "last_check" in state.state and "pypi_version" in state.state:
-            last_check = datetime.datetime.strptime(
-                state.state["last_check"],
-                SELFCHECK_DATE_FMT
-            )
-            if (current_time - last_check).total_seconds() < 7 * 24 * 60 * 60:
-                pypi_version = state.state["pypi_version"]
+    #     current_time = datetime.datetime.utcnow()
+    #     # Determine if we need to refresh the state
+    #     if "last_check" in state.state and "pypi_version" in state.state:
+    #         last_check = datetime.datetime.strptime(
+    #             state.state["last_check"],
+    #             SELFCHECK_DATE_FMT
+    #         )
+    #         if (current_time - last_check).total_seconds() < 7 * 24 * 60 * 60:
+    #             pypi_version = state.state["pypi_version"]
 
-        # Refresh the version if we need to or just see if we need to warn
-        if pypi_version is None:
-            # Lets use PackageFinder to see what the latest pip version is
-            link_collector = LinkCollector.create(
-                session,
-                options=options,
-                suppress_no_index=True,
-            )
+    #     # Refresh the version if we need to or just see if we need to warn
+    #     if pypi_version is None:
+    #         # Lets use PackageFinder to see what the latest pip version is
+    #         link_collector = LinkCollector.create(
+    #             session,
+    #             options=options,
+    #             suppress_no_index=True,
+    #         )
 
-            # Pass allow_yanked=False so we don't suggest upgrading to a
-            # yanked version.
-            selection_prefs = SelectionPreferences(
-                allow_yanked=False,
-                allow_all_prereleases=False,  # Explicitly set to False
-            )
+    #         # Pass allow_yanked=False so we don't suggest upgrading to a
+    #         # yanked version.
+    #         selection_prefs = SelectionPreferences(
+    #             allow_yanked=False,
+    #             allow_all_prereleases=False,  # Explicitly set to False
+    #         )
 
-            finder = PackageFinder.create(
-                link_collector=link_collector,
-                selection_prefs=selection_prefs,
-            )
-            best_candidate = finder.find_best_candidate("pip").best_candidate
-            if best_candidate is None:
-                return
-            pypi_version = str(best_candidate.version)
+    #         finder = PackageFinder.create(
+    #             link_collector=link_collector,
+    #             selection_prefs=selection_prefs,
+    #         )
+    #         best_candidate = finder.find_best_candidate("pip").best_candidate
+    #         if best_candidate is None:
+    #             return
+    #         pypi_version = str(best_candidate.version)
 
-            # save that we've performed a check
-            state.save(pypi_version, current_time)
+    #         # save that we've performed a check
+    #         state.save(pypi_version, current_time)
 
-        remote_version = parse_version(pypi_version)
+    #     remote_version = parse_version(pypi_version)
 
-        local_version_is_older = (
-            pip_version < remote_version and
-            pip_version.base_version != remote_version.base_version and
-            was_installed_by_pip('pip')
-        )
+    #     local_version_is_older = (
+    #         pip_version < remote_version and
+    #         pip_version.base_version != remote_version.base_version and
+    #         was_installed_by_pip('pip')
+    #     )
 
-        # Determine if our pypi_version is older
-        if not local_version_is_older:
-            return
+    #     # Determine if our pypi_version is older
+    #     if not local_version_is_older:
+    #         return
 
-        # We cannot tell how the current pip is available in the current
-        # command context, so be pragmatic here and suggest the command
-        # that's always available. This does not accommodate spaces in
-        # `sys.executable`.
-        pip_cmd = f"{sys.executable} -m pip"
-        logger.warning(
-            "You are using pip version %s; however, version %s is "
-            "available.\nYou should consider upgrading via the "
-            "'%s install --upgrade pip' command.",
-            pip_version, pypi_version, pip_cmd
-        )
-    except Exception:
-        logger.debug(
-            "There was an error checking the latest version of pip",
-            exc_info=True,
-        )
+    #     # We cannot tell how the current pip is available in the current
+    #     # command context, so be pragmatic here and suggest the command
+    #     # that's always available. This does not accommodate spaces in
+    #     # `sys.executable`.
+    #     pip_cmd = f"{sys.executable} -m pip"
+    #     logger.warning(
+    #         "You are using pip version %s; however, version %s is "
+    #         "available.\nYou should consider upgrading via the "
+    #         "'%s install --upgrade pip' command.",
+    #         pip_version, pypi_version, pip_cmd
+    #     )
+    # except Exception:
+    #     logger.debug(
+    #         "There was an error checking the latest version of pip",
+    #         exc_info=True,
+    #     )

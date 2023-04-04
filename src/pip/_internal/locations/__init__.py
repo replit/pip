@@ -138,7 +138,7 @@ def get_scheme(
         if skip_osx_framework_user_special_case:
             continue
 
-        warned.append(_warn_if_mismatch(old_v, new_v, key=f"scheme.{k}"))
+        # warned.append(_warn_if_mismatch(old_v, new_v, key=f"scheme.{k}"))
 
     if any(warned):
         _log_context(user=user, home=home, root=root, prefix=prefix)
